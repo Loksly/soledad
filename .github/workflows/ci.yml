@@ -1,6 +1,6 @@
 name: CI
 
-# typecheck → lint → test → build → tamaño del bundle. Si algo falla, no se mergea (docs/09 §7).
+# typecheck → lint → build → test → tamaño del bundle. Si algo falla, no se mergea (docs/09 §7).
 on:
   push:
     branches: [main]
@@ -24,17 +24,24 @@ jobs:
       - name: Lint (incluye el aislamiento de core/ y la prohibición de Math.random)
         run: npm run lint
 
+      # El BUILD va antes que los tests, y no es un capricho de orden: las pruebas de la PWA
+      # miran `dist/` (que el manifiesto sea instalable, que el service worker precachee el mazo
+      # entero, que nada apunte a un origen externo). Sin compilar antes, esa suite no tendría
+      # nada que mirar.
+      #
+      # Las cartas en WebP y los iconos vienen versionados en public/, así que este paso no
+      # rasteriza nada: son segundos, no minutos.
+      - name: Build
+        run: npm run build
+
       - name: Tests
         run: npm run test
 
       - name: Cobertura del motor (> 85 %)
         run: npm run coverage
 
-      - name: Build
-        run: npm run build
-
       - name: Presupuesto de bundle (< 200 kB gzip)
-        run: node scripts/check-size.mjs
+        run: npm run size
 
   # El manifiesto de retos diarios es un cambio de DATOS: se revisa aparte, no en cada push.
   dailies:
