@@ -1,0 +1,27 @@
+node_modules/
+dist/
+coverage/
+.tmp/
+
+# Generado en el build a partir de assets/cards/ (el original SÍ se versiona, y es la fuente de
+# verdad para la atribución). No se versionan 6,6 MB de WebP derivados que se rehacen en 1 s.
+public/assets/cards/
+public/assets/daily/
+public/icons/
+
+# Build de Android (la carpeta android/ SÍ se versiona; sus artefactos no)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+android/capacitor-cordova-android-plugins/
+
+# El keystore JAMÁS entra en el repositorio (docs/08 §6). Perderlo significa no poder actualizar
+# nunca más la app para los usuarios que ya la tienen: guárdalo en un gestor de contraseñas.
+*.keystore
+*.jks
+keystore.properties
+
+.DS_Store
+*.log

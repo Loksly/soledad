@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <!-- viewport-fit=cover: la app va edge-to-edge, y las safe areas se respetan en CSS.
+         user-scalable=no: hacer zoom con dos dedos en un tablero de cartas sólo estorba. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#1b5e3a" />
+    <title>Soledad</title>
+
+    <!-- PWA: se instala desde el navegador y a partir de ahí funciona sin conexión. Es gratis:
+         el mismo código que va al APK, sin nada que quitar, porque la app nunca usó la red. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

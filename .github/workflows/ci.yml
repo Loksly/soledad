@@ -1,0 +1,56 @@
+name: CI
+
+# typecheck → lint → test → build → tamaño del bundle. Si algo falla, no se mergea (docs/09 §7).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run prepare:assets
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint (incluye el aislamiento de core/ y la prohibición de Math.random)
+        run: npm run lint
+
+      - name: Tests
+        run: npm run test
+
+      - name: Cobertura del motor (> 85 %)
+        run: npm run coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Presupuesto de bundle (< 200 kB gzip)
+        run: node scripts/check-size.mjs
+
+  # El manifiesto de retos diarios es un cambio de DATOS: se revisa aparte, no en cada push.
+  dailies:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Generar y verificar los repartos con el solver
+        run: npm run dailies -- --from 2026-01-01 --to 2036-12-31
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daily-manifest
+          path: data/daily/manifest.json

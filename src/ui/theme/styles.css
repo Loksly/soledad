@@ -1,0 +1,928 @@
+/*
+ * Tipografía del sistema: no se descarga ninguna fuente. Pesan, y son una petición de red en
+ * una app que promete no hacer ninguna (docs/05 §6).
+ */
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  --felt: #1b5e3a;
+  --felt-dark: #14432a;
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --muted: #5c5c5c;
+  --accent: #1b5e3a;
+  --line: rgba(0, 0, 0, 0.1);
+
+  --easy: #2e7d32;
+  --medium: #1565c0;
+  --hard: #ef6c00;
+  --expert: #b71c1c;
+
+  --move: 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color-scheme: light dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+/* El tema del sistema se respeta por defecto; los data-theme lo fuerzan. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181c;
+    --surface: #22252b;
+    --text: #eceff4;
+    --muted: #a3a9b5;
+    --line: rgba(255, 255, 255, 0.12);
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #16181c;
+  --surface: #22252b;
+  --text: #eceff4;
+  --muted: #a3a9b5;
+  --line: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='light'] {
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --muted: #5c5c5c;
+  --line: rgba(0, 0, 0, 0.1);
+}
+
+:root[data-felt='blue'] {
+  --felt: #17456e;
+  --felt-dark: #0f3151;
+}
+:root[data-felt='slate'] {
+  --felt: #3b4450;
+  --felt-dark: #2a313a;
+}
+:root[data-felt='wine'] {
+  --felt: #6b1f2e;
+  --felt-dark: #4d1621;
+}
+
+/*
+ * prefers-reduced-motion → duración 0. No "un poco menos": CERO. Es obligatorio, no opcional
+ * (docs/05 §2, docs/09 §5).
+ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
+
+:root[data-motion='reduced'] * {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+#app {
+  height: 100dvh;
+}
+
+.screen {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+}
+
+.splash {
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- tablero */
+
+.game {
+  background: linear-gradient(160deg, var(--felt), var(--felt-dark));
+  color: #fff;
+}
+
+.board {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 6%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  user-select: none;
+  -webkit-user-drag: none;
+  /* La transición sobre `transform` ES la animación de movimiento: el nodo persiste (key=id),
+     así que el navegador interpola de la posición vieja a la nueva. Nada de left/top. */
+  transition: transform var(--move);
+  will-change: auto;
+}
+
+.card-instant {
+  transition: none;
+}
+
+.card-dragging {
+  transition: none; /* Durante el arrastre la carta debe seguir al dedo sin retardo. */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  cursor: grabbing;
+}
+
+.card-hint {
+  outline: 3px solid #ffd54f;
+  outline-offset: -3px;
+  border-radius: 6%;
+}
+
+.slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 2px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 6%;
+  transition: border-color 120ms;
+}
+
+/* Destinos válidos resaltados en cuanto empieza el arrastre (docs/05 §4). */
+.slot-target {
+  border-color: #ffd54f;
+  background: rgba(255, 213, 79, 0.14);
+}
+
+.game-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.game-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.objective {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.game-stats {
+  display: flex;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
+
+/* Los controles van ABAJO: es donde llega el pulgar (docs/05 §3.5). */
+.controls {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px calc(8px + var(--safe-bottom));
+  justify-content: center;
+}
+
+.hand-left .controls {
+  flex-direction: row-reverse;
+}
+
+.controls button {
+  flex: 1;
+  max-width: 160px;
+  /* Objetivo táctil ≥ 44 px (docs/09 §5). */
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.controls button:disabled {
+  opacity: 0.35;
+}
+
+.controls .primary {
+  background: #ffd54f;
+  color: #1a1a1a;
+}
+
+/* ---------------------------------------------------------------- inicio */
+
+.home,
+.list {
+  overflow-y: auto;
+  gap: 12px;
+  padding: calc(12px + var(--safe-top)) 12px calc(12px + var(--safe-bottom));
+}
+
+.home-header,
+.list-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.list-head h1,
+.home-header h1 {
+  font-size: 22px;
+  flex: 1;
+}
+
+.card-panel {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hint {
+  line-height: 1.4;
+}
+
+.challenge-list,
+.star-list,
+.shop-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.challenge {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: 'badge game reward' 'badge objective reward';
+  gap: 2px 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+
+.challenge-done {
+  opacity: 0.55;
+}
+
+.badge {
+  grid-area: badge;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+
+.badge-easy {
+  background: var(--easy);
+}
+.badge-medium {
+  background: var(--medium);
+}
+.badge-hard {
+  background: var(--hard);
+}
+.badge-expert {
+  background: var(--expert);
+}
+
+.challenge-game {
+  grid-area: game;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.challenge-objective {
+  grid-area: objective;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.challenge-reward {
+  grid-area: reward;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.done-all {
+  font-size: 13px;
+  color: var(--easy);
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.game-tile {
+  min-height: 64px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(150deg, var(--felt), var(--felt-dark));
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.resume {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+}
+
+.home-nav {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.home-nav button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.level {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  padding-bottom: 8px;
+}
+
+.chip {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chip-on {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.icon {
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+}
+
+.link {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- calendario */
+
+.streak-row {
+  display: flex;
+  gap: 12px;
+}
+
+.streak-row div {
+  flex: 1;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.streak-row strong {
+  font-size: 24px;
+}
+
+.streak-row span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.day-partial {
+  background: rgba(27, 94, 58, 0.25);
+  color: var(--text);
+}
+
+.day-full {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.day-today {
+  outline: 2px solid var(--accent);
+}
+
+.day-future {
+  opacity: 0.35;
+}
+
+/* ---------------------------------------------------------------- listas */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+}
+
+.stat-grid dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat-grid dd {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.star-list li,
+.shop-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 13px;
+}
+
+.star-text,
+.shop-name {
+  flex: 1;
+}
+
+.star-done .star-text {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.star-coins,
+.star-count {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.row span {
+  display: flex;
+  flex-direction: column;
+}
+
+.row small {
+  font-size: 11px;
+}
+
+.row select,
+.row input[type='checkbox'] {
+  min-height: 32px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.row-actions button {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------- superposiciones */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 2000;
+}
+
+.dialog {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 16px;
+  padding: 20px;
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+}
+
+.dialog button {
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.dialog .primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.win h2 {
+  font-size: 24px;
+}
+
+.celebrating {
+  animation: pop 320ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.win-rewards {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.win-line {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.win-badge {
+  font-weight: 700;
+}
+
+.win-lifeline {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.win-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.win-actions button {
+  flex: 1;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(84px + var(--safe-bottom));
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  z-index: 1500;
+  max-width: 88vw;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- partida libre */
+
+.variant-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.variant-list button {
+  min-height: 40px;
+}
+
+.dialog input[type='number'] {
+  width: 120px;
+  min-height: 40px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  text-align: right;
+}
+
+/* Ficha de juego con partida a medias: tocarla la retoma; el ＋ reparte de cero. */
+.game-tile-wrap {
+  position: relative;
+  display: flex;
+}
+
+.game-tile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.game-tile small {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.game-new {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ---------------------------------------------------------------- apaisado
+ *
+ * En apaisado el recurso escaso es el ALTO: una barra de controles de 64 px abajo se comía el
+ * tablero y dejaba las cartas diminutas. Los controles pasan a una columna estrecha al lado
+ * (a la derecha, o a la izquierda si el jugador es zurdo), y encogen.
+ */
+@media (orientation: landscape) {
+  .game {
+    flex-direction: row;
+  }
+
+  .game-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Menú a la izquierda, cifras a la derecha, y el tablero visible en medio: el título ya no
+       es una franja que cruza la pantalla, sino una píldora del ancho de su texto. */
+    justify-content: space-between;
+    /*
+     * Por encima de las cartas, incluida la que se arrastra.
+     *
+     * Con `z-index: 10` la barra quedaba DEBAJO del tablero (las cartas se apilan hasta ~50, y
+     * hasta ~1050 mientras se arrastra una), así que una carta en la esquina superior izquierda
+     * tapaba el botón de menú y se comía el toque. Se queda por debajo del aviso flotante (1500)
+     * y del diálogo de pausa (2000), que sí deben taparlo todo.
+     */
+    z-index: 1400;
+    padding: 4px 8px;
+    font-size: 12px;
+    /* La barra flota sobre el tablero: sólo sus controles reciben el toque, el resto pasa de
+       largo hasta las cartas de debajo. */
+    pointer-events: none;
+  }
+
+  /* Flotan sobre las cartas: sin fondo, un índice de carta detrás los vuelve ilegibles. */
+  .game-bar .icon {
+    pointer-events: auto;
+    min-width: 40px;
+    min-height: 40px;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 10px;
+  }
+
+  /*
+   * El nombre del juego y el objetivo del reto también flotan sobre las cartas. Una sombra de
+   * texto no basta: con el índice de una carta detrás, siguen sin leerse. Fondo sólido, como el
+   * botón, y `flex: 0 1 auto` para que la píldora sea del ancho del texto y no una franja que
+   * cruce el tablero entero.
+   */
+  .game-bar .game-meta {
+    flex: 0 1 auto;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 10px;
+    padding: 4px 10px;
+    max-width: 55%;
+  }
+
+  .game-bar .game-meta span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /*
+   * El cronómetro y el contador, apilados y pegados al borde derecho, justo encima de la columna
+   * de botones: es el único hueco muerto que quedaba en apaisado. `margin-left: auto` los empuja
+   * hasta el final aunque el título de al lado sea corto.
+   */
+  .game-bar .game-stats {
+    flex-direction: column;
+    align-items: flex-end;
+    margin-left: auto;
+    align-self: flex-start;
+    gap: 2px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .hand-left .game-bar .game-stats {
+    align-items: flex-start;
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .hand-left .game-bar {
+    flex-direction: row-reverse;
+  }
+
+
+  .board {
+    order: 1;
+  }
+
+  .controls {
+    order: 2;
+    flex-direction: column;
+    justify-content: center;
+    width: 76px;
+    /* 56px arriba: el cronómetro y el contador viven ahí ahora. */
+    padding: 56px 8px 8px 0;
+    gap: 6px;
+  }
+
+  .hand-left .game {
+    flex-direction: row-reverse;
+  }
+
+  .hand-left .controls {
+    flex-direction: column;
+    padding: 56px 0 8px 8px;
+  }
+
+  .controls button {
+    flex: 0 0 auto;
+    max-width: none;
+    width: 100%;
+    /* Sigue cumpliendo el objetivo táctil de 44 px, pero sin robarle alto al tablero. */
+    min-height: 44px;
+    font-size: 12px;
+    padding: 4px;
+  }
+}
+
+/*
+ * La carta en vuelo: elevada y con más sombra mientras dura el movimiento (180 ms). El z-index
+ * lo pone el componente; aquí sólo se le da el relieve que hace que se lea como "está encima".
+ */
+.card-flying {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/*
+ * El volteo con rotación en Y (docs/05 §2) NO está: la carta es un único <img> posicionado con
+ * `transform: translate3d(...)`, y una animación de `rotateY` pelearía con esa misma propiedad.
+ * Hacerlo bien pide un nodo envoltorio por carta — 104 nodos más en Spider — y no compensa
+ * antes de haber medido los fps en un móvil real. Se hará cuando haya números.
+ */
+
+/* El aviso de tiempo: un apunte, no una alarma. Sin rojo, sin icono de peligro, sin urgencia. */
+.over-goal {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-left: 3px solid var(--line);
+}
+
+.level {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

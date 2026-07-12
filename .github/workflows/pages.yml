@@ -1,0 +1,58 @@
+name: Publicar la PWA
+
+# Publica el juego en GitHub Pages en cada push a main. Gratis, con HTTPS (que es imprescindible:
+# sin HTTPS, Chrome no registra el Service Worker y no ofrece "Instalar").
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # GitHub Pages sirve bajo https://<usuario>.github.io/<repo>/, no en la raíz del dominio.
+      # Sin BASE_URL, todas las rutas absolutas (/assets/…) apuntarían al sitio equivocado y la
+      # app saldría en blanco. Con un dominio propio (o Netlify/Cloudflare) esto no hace falta.
+      - name: Compilar
+        env:
+          BASE_URL: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - name: Retoques de GitHub Pages
+        run: |
+          # Pages sirve 404.html cuando no encuentra la ruta: que sea la propia app.
+          cp dist/index.html dist/404.html
+          # Sin .nojekyll, Pages ignora las carpetas que empiezan por guión bajo.
+          touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

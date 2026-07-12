@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copia de seguridad de Android limitada a los datos del juego (docs/07 §5). Es gratis y pasa
+  por la copia de Google del usuario (o no, si la tiene desactivada). NO sustituye a
+  exportar/importar: es un complemento.
+-->
+<full-backup-content>
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="." />
+    <exclude domain="cache" path="." />
+</full-backup-content>
