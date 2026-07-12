@@ -91,10 +91,18 @@ prueba automática que lo verifica, porque es un principio, no una preferencia.
 
 ## Créditos y aviso legal
 
-Las cartas son de [SVG-cards, de Saul Spatz](assets/README.md), en **dominio público**.
+Las cartas son de **[SVG-cards, de Saul Spatz](https://github.com/saulspatz/SVG-cards)**, en
+**dominio público**. La atribución completa —incluidas las figuras de Byron Knoll y los reversos
+de openclipart.org— está en **[CREDITS.md](CREDITS.md)**, y también dentro de la propia app.
 
-Este proyecto clona *mecánicas de juego*, que no son protegibles por copyright. **No usa ninguna
-marca, logotipo, arte, sonido, texto ni código de terceros**, y su nombre no evoca a ningún
-producto suyo.
+Klondike, Spider, FreeCell, Pirámide y TriPeaks son solitarios clásicos de **dominio público**:
+sus reglas llevan más de un siglo en circulación y **las mecánicas de juego no son protegibles por
+copyright**. Sus nombres son genéricos, no marcas.
 
-Licencia: [GPL-3.0-or-later](LICENSE).
+Este proyecto **no usa ninguna marca, logotipo, arte, sonido, texto ni línea de código de ninguna
+empresa**. Todo el código es original y hay una prueba automática
+([`tests/unit/legal.spec.ts`](tests/unit/legal.spec.ts)) que falla si se cuela una marca ajena.
+
+Licencia del código: **[GPL-3.0-or-later](LICENSE)**. La GPL es deliberada: la promesa de "sin
+publicidad y sin telemetría" sólo vale algo si nadie puede coger esto, meterle un SDK de anuncios
+y repartirlo a puerta cerrada.

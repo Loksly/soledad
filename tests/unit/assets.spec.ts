@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { cardSrc, backSrc } from '../../src/ui/board/cardSrc';
-import { RANKS, SUITS, makeCard } from '../../src/core/card';
+import { RANKS, SUITS, makeCard, assetName } from '../../src/core/card';
 import { engineFor, DEFAULT_VARIANTS } from '../../src/core/games';
 import { GAME_IDS } from '../../src/core/types';
 import { allCards } from '../../src/core/engine';
@@ -22,6 +22,48 @@ const PUBLIC = join(ROOT, 'public');
 const DECK = { folder: 'Vertical2', back: 'blueBack' };
 
 const onDisk = (url: string): string => join(PUBLIC, url);
+
+/**
+ * Los WebP están VERSIONADOS (ver .gitignore): rasterizar 324 naipes cuesta minutos y CI parte de
+ * cero en cada build. El riesgo de versionar un artefacto es que se desincronice de su fuente sin
+ * que nadie se entere, así que aquí está el guardián: si alguien añade o cambia un SVG y no
+ * ejecuta `npm run assets`, esto falla.
+ */
+describe('los WebP versionados están al día con los SVG', () => {
+  const DECKS = [
+    'Vertical2',
+    'Vertical4',
+    'Horizontal2',
+    'Horizontal4',
+    'Accessible/Vertical',
+    'Accessible/Horizontal',
+  ];
+
+  it.each(DECKS)('%s tiene sus 54 cartas rasterizadas', (deck) => {
+    const missing: string[] = [];
+    for (const suit of SUITS) {
+      for (const rank of RANKS) {
+        const file = join(PUBLIC, 'assets', 'cards', deck, `${assetName(suit, rank)}.webp`);
+        if (!existsSync(file)) missing.push(file);
+      }
+    }
+    for (const back of ['blueBack', 'redBack']) {
+      const file = join(PUBLIC, 'assets', 'cards', deck, `${back}.webp`);
+      if (!existsSync(file)) missing.push(file);
+    }
+    expect(missing, 'faltan cartas: ejecuta `npm run assets`').toEqual([]);
+  });
+
+  it('los iconos de la PWA están generados', () => {
+    for (const icon of ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png']) {
+      expect(existsSync(join(PUBLIC, 'icons', icon)), `falta ${icon}`).toBe(true);
+    }
+  });
+
+  it('el manifiesto de retos está copiado a public/', () => {
+    expect(existsSync(join(PUBLIC, 'assets', 'daily', 'manifest.json'))).toBe(true);
+  });
+});
 
 describe('rutas de las cartas', () => {
   it('las 52 caras del mazo empaquetado existen en el disco', () => {

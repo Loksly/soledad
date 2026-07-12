@@ -7,7 +7,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * marca registrada no lo es (docs/08 §5).
  */
 const config: CapacitorConfig = {
-  appId: 'org.soledad.solitaire',
+  appId: 'io.github.loksly.soledad',
   appName: 'Soledad',
   webDir: 'dist',
   android: {

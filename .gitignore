@@ -3,11 +3,32 @@ dist/
 coverage/
 .tmp/
 
-# Generado en el build a partir de assets/cards/ (el original SÍ se versiona, y es la fuente de
-# verdad para la atribución). No se versionan 6,6 MB de WebP derivados que se rehacen en 1 s.
-public/assets/cards/
-public/assets/daily/
-public/icons/
+# public/ SÍ se versiona, a propósito.
+#
+# Son ~3,3 MB de WebP e iconos derivados de assets/cards/. Versionar un artefacto de build suele
+# ser mala idea, pero aquí la alternativa es peor: rasterizar 324 naipes cuesta minutos y CI parte
+# de cero en CADA build, así que estaría pagando ese precio una y otra vez para producir siempre
+# exactamente lo mismo. Los SVG originales cambian aproximadamente nunca.
+#
+# Se regeneran con `npm run assets` cuando de verdad haga falta.
+
+# ---------------------------------------------------------------------------------------------
+# Partes del repositorio de cartas que este proyecto NO usa y no se versionan.
+#
+# Los ficheros siguen en el disco (no se borra nada del original de Saul Spatz), pero no entran
+# en el repositorio: son 56 de los 104 MB, y ni una línea de código los toca.
+#
+#   - sprite.svg  : 8,2 MB POR MAZO. Se descartó el sprite (docs/05 §1) y se usa un WebP por
+#                   carta, así que son 49 MB muertos.
+#   - pngs/       : 4,5 MB. La app rasteriza desde el SVG, que es la fuente de verdad.
+#   - *Joker.svg  : los comodines no se usan en ninguno de los cinco solitarios (docs/03 §0).
+#
+# Quien quiera el repositorio de cartas ENTERO lo tiene en su origen, que está citado en
+# CREDITS.md. Lo que aquí se versiona son las 324 cartas que la app usa de verdad.
+assets/cards/**/sprite.svg
+assets/cards/**/sprite.png
+assets/cards/**/pngs/
+assets/cards/**/*Joker.svg
 
 # Build de Android (la carpeta android/ SÍ se versiona; sus artefactos no)
 android/app/build/

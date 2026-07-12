@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "org.soledad.solitaire"
+    namespace "io.github.loksly.soledad"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "org.soledad.solitaire"
+        applicationId "io.github.loksly.soledad"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
