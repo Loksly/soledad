@@ -15,8 +15,28 @@ import { feedback } from '../../services/feedback';
  * la GPU (docs/09 §8 nº 10).
  */
 
-const DRAG_THRESHOLD = 8; // px antes de considerarlo arrastre: un toque tembloroso no lo es.
-const MAGNET = 0.4; // El dedo tapa la carta. Ser estricto aquí se siente como un fallo del juego.
+/**
+ * Umbral de arrastre. Subido de 8 a 14 px.
+ *
+ * Es la distancia que hay que recorrer antes de que un toque cuente como arrastre. Una mano que
+ * tiembla se mueve más de 8 px sin querer, y entonces el toque que la persona quería hacer se
+ * convierte en un arrastre a ninguna parte y la carta se queda donde estaba. Desde fuera parece
+ * que la app "no responde", y quien lo sufre concluye que la torpe es ella.
+ */
+const DRAG_THRESHOLD = 14;
+
+/** El dedo tapa la carta. Ser estricto aquí se siente como un fallo del juego, no como puntería. */
+const MAGNET = 0.5;
+
+/**
+ * Cuánto se agranda la ZONA DE TOQUE de una carta, sin agrandar el dibujo (docs/09 §5).
+ *
+ * Una carta enterrada en una columna sólo enseña una franja fina. La franja es lo que se ve, pero
+ * no tiene por qué ser lo que se toca: el área sensible se extiende por debajo del dibujo, hacia
+ * la carta siguiente, y las de encima siguen ganando porque están más arriba en el z-index. Así
+ * la columna entera se vuelve tocable sin cambiar ni un píxel de lo que se ve.
+ */
+const TOUCH_PADDING = 10;
 
 interface Placed {
   readonly card: Card;
@@ -189,8 +209,19 @@ export function Board({ deck, animations, onMove }: BoardProps): preact.JSX.Elem
     void event;
   };
 
+  /**
+   * Toque sobre una PILA (no sobre una carta arrastrable): robar del mazo, repartir en Spider,
+   * pasar al descarte…
+   *
+   * Esto estaba ROTO, y en los cuatro juegos que tienen mazo: o sea, no se podía robar, o sea que
+   * no se podía jugar. El hueco de la pila (`.slot`) es quien escuchaba el toque, pero se pinta
+   * DEBAJO de las cartas. Con el mazo lleno, el dedo siempre caía sobre una carta — y las cartas
+   * del mazo no son arrastrables, así que el manejador se lo tragaba y no hacía nada. Sólo
+   * funcionaba con el mazo vacío, que es exactamente cuando ya no queda nada que robar.
+   *
+   * Ahora una carta no arrastrable reenvía el toque a SU pila, que es lo que el dedo quería decir.
+   */
   const tapPile = (pile: PileRef): void => {
-    if (pile.kind !== 'stock') return;
     if (game.smartTap(pile)) feedback.tap();
     else feedback.invalid();
   };
@@ -252,6 +283,8 @@ export function Board({ deck, animations, onMove }: BoardProps): preact.JSX.Elem
             src={cardSrc(entry.card, deck)}
             alt=""
             draggable={false}
+            // A qué pila pertenece. Lo usan las pruebas y sirve para depurar en el inspector.
+            data-pile={pileKey(entry.pile)}
             style={{
               width: `${layout.cardW}px`,
               height: `${layout.cardH}px`,
@@ -261,11 +294,41 @@ export function Board({ deck, animations, onMove }: BoardProps): preact.JSX.Elem
             }}
             onPointerDown={(event) => beginDrag(event, entry)}
             onPointerMove={(event) => moveDrag(event)}
-            onPointerUp={(event) => endDrag(event)}
+            onPointerUp={(event) => {
+              // Si la carta no se puede arrastrar (el mazo, una carta boca abajo), el toque es
+              // para SU PILA. Antes se perdía aquí en silencio.
+              if (entry.draggable) endDrag(event);
+              else tapPile(entry.pile);
+            }}
             onPointerCancel={() => setDrag(null)}
           />
         );
       })}
+
+      {/*
+        LA ZONA DE TOQUE, separada del dibujo.
+        Va encima de las cartas (z-index + 1 sobre el suyo) y es más alta que la franja visible,
+        así que se puede tocar una carta enterrada aunque de ella sólo asomen nueve píxeles. La
+        carta que está por encima gana siempre, porque su zona va después y más alta.
+      */}
+      {byRenderOrder
+        .filter((entry) => entry.draggable && !drag?.active)
+        .map((entry) => (
+          <div
+            key={`touch-${entry.card.id}`}
+            class="card-touch"
+            style={{
+              width: `${layout.cardW}px`,
+              height: `${layout.cardH + TOUCH_PADDING}px`,
+              transform: `translate3d(${entry.x}px, ${entry.y - TOUCH_PADDING / 2}px, 0)`,
+              zIndex: 500 + entry.z,
+            }}
+            onPointerDown={(event) => beginDrag(event, entry)}
+            onPointerMove={(event) => moveDrag(event)}
+            onPointerUp={(event) => endDrag(event)}
+            onPointerCancel={() => setDrag(null)}
+          />
+        ))}
     </div>
   );
 }

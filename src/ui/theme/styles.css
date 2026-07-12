@@ -3,6 +3,22 @@
  * una app que promete no hacer ninguna (docs/05 §6).
  */
 
+/*
+ * ACCESIBILIDAD DE SERIE, no como un ajuste escondido.
+ *
+ * Esta app la usa gente mayor, con poca vista y poca destreza con el móvil. Un "modo accesible"
+ * dentro de Ajustes no le sirve a quien no sabe que existe: la app es así para todo el mundo, y
+ * punto. Quien tenga buena vista no pierde nada porque el texto sea grande.
+ *
+ * Todo el texto va en `rem`, nunca en `px`. Es lo ÚNICO que hace que Android respete el tamaño
+ * de letra que la persona ya tiene configurado en su teléfono — que muchas veces lo tiene al
+ * máximo, precisamente porque lo necesita, y hasta ahora lo estábamos ignorando.
+ */
+html {
+  font-size: 100%; /* = el que diga el navegador y el sistema. Nunca se fija en px. */
+  -webkit-text-size-adjust: 100%;
+}
+
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -14,8 +30,8 @@
   --bg: #f4f2ee;
   --surface: #ffffff;
   --text: #1a1a1a;
-  --muted: #5c5c5c;
-  --accent: #1b5e3a;
+  --muted: #454545;
+  --accent: #16512f;
   --line: rgba(0, 0, 0, 0.1);
 
   --easy: #2e7d32;
@@ -40,8 +56,8 @@
     --bg: #16181c;
     --surface: #22252b;
     --text: #eceff4;
-    --muted: #a3a9b5;
-    --line: rgba(255, 255, 255, 0.12);
+    --muted: #c2c8d4;
+    --line: rgba(255, 255, 255, 0.18);
   }
 }
 
@@ -49,16 +65,16 @@
   --bg: #16181c;
   --surface: #22252b;
   --text: #eceff4;
-  --muted: #a3a9b5;
-  --line: rgba(255, 255, 255, 0.12);
+  --muted: #c2c8d4;
+  --line: rgba(255, 255, 255, 0.18);
 }
 
 :root[data-theme='light'] {
   --bg: #f4f2ee;
   --surface: #ffffff;
-  --text: #1a1a1a;
-  --muted: #5c5c5c;
-  --line: rgba(0, 0, 0, 0.1);
+  --text: #111111;
+  --muted: #454545;
+  --line: rgba(0, 0, 0, 0.16);
 }
 
 :root[data-felt='blue'] {
@@ -184,7 +200,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 1.05rem;
 }
 
 .game-meta {
@@ -195,7 +211,7 @@ body {
 }
 
 .objective {
-  font-size: 12px;
+  font-size: 0.95rem;
   opacity: 0.85;
 }
 
@@ -222,12 +238,12 @@ body {
   flex: 1;
   max-width: 160px;
   /* Objetivo táctil ≥ 44 px (docs/09 §5). */
-  min-height: 44px;
+  min-height: 52px;
   border: none;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
-  font-size: 14px;
+  font-size: 1.05rem;
   font-weight: 600;
 }
 
@@ -258,7 +274,7 @@ body {
 
 .list-head h1,
 .home-header h1 {
-  font-size: 22px;
+  font-size: 1.65rem;
   flex: 1;
 }
 
@@ -278,13 +294,13 @@ body {
 }
 
 h2 {
-  font-size: 15px;
+  font-size: 1.15rem;
   font-weight: 600;
 }
 
 .muted {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .hint {
@@ -308,7 +324,7 @@ h2 {
   gap: 2px 10px;
   align-items: center;
   width: 100%;
-  min-height: 52px;
+  min-height: 60px;
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -323,7 +339,7 @@ h2 {
 
 .badge {
   grid-area: badge;
-  font-size: 10px;
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   color: #fff;
@@ -347,12 +363,12 @@ h2 {
 .challenge-game {
   grid-area: game;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 1.05rem;
 }
 
 .challenge-objective {
   grid-area: objective;
-  font-size: 12px;
+  font-size: 0.95rem;
   color: var(--muted);
 }
 
@@ -363,7 +379,7 @@ h2 {
 }
 
 .done-all {
-  font-size: 13px;
+  font-size: 1rem;
   color: var(--easy);
 }
 
@@ -380,20 +396,20 @@ h2 {
   background: linear-gradient(150deg, var(--felt), var(--felt-dark));
   color: #fff;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 1.05rem;
 }
 
 .resume {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 52px;
+  min-height: 60px;
   padding: 12px 14px;
   border: none;
   border-radius: 14px;
   background: var(--accent);
   color: #fff;
-  font-size: 14px;
+  font-size: 1.05rem;
 }
 
 .home-nav {
@@ -403,29 +419,29 @@ h2 {
 }
 
 .home-nav button {
-  min-height: 44px;
+  min-height: 52px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
   color: var(--text);
-  font-size: 14px;
+  font-size: 1.05rem;
 }
 
 .level {
   text-align: center;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.95rem;
   padding-bottom: 8px;
 }
 
 .chip {
-  min-height: 32px;
+  min-height: 44px;
   padding: 6px 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
   color: var(--text);
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -437,19 +453,19 @@ h2 {
 
 .icon {
   min-width: 44px;
-  min-height: 44px;
+  min-height: 52px;
   border: none;
   border-radius: 10px;
   background: transparent;
   color: inherit;
-  font-size: 18px;
+  font-size: 1.4rem;
 }
 
 .link {
   border: none;
   background: none;
   color: var(--accent);
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -471,11 +487,11 @@ h2 {
 }
 
 .streak-row strong {
-  font-size: 24px;
+  font-size: 1.85rem;
 }
 
 .streak-row span {
-  font-size: 12px;
+  font-size: 0.95rem;
   color: var(--muted);
 }
 
@@ -492,7 +508,7 @@ h2 {
   justify-content: center;
   border-radius: 8px;
   border: 1px solid var(--line);
-  font-size: 12px;
+  font-size: 0.95rem;
   color: var(--muted);
 }
 
@@ -524,13 +540,13 @@ h2 {
 }
 
 .stat-grid dt {
-  font-size: 11px;
+  font-size: 0.9rem;
   color: var(--muted);
 }
 
 .stat-grid dd {
   margin: 0;
-  font-size: 17px;
+  font-size: 1.35rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -540,8 +556,8 @@ h2 {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 44px;
-  font-size: 13px;
+  min-height: 52px;
+  font-size: 1rem;
 }
 
 .star-text,
@@ -557,7 +573,7 @@ h2 {
 .star-coins,
 .star-count {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.95rem;
 }
 
 .row {
@@ -565,8 +581,8 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 44px;
-  font-size: 14px;
+  min-height: 52px;
+  font-size: 1.05rem;
 }
 
 .row span {
@@ -575,12 +591,12 @@ h2 {
 }
 
 .row small {
-  font-size: 11px;
+  font-size: 0.9rem;
 }
 
 .row select,
 .row input[type='checkbox'] {
-  min-height: 32px;
+  min-height: 44px;
 }
 
 .row-actions {
@@ -590,12 +606,12 @@ h2 {
 
 .row-actions button {
   flex: 1;
-  min-height: 44px;
+  min-height: 52px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: transparent;
   color: var(--text);
-  font-size: 14px;
+  font-size: 1.05rem;
 }
 
 /* ---------------------------------------------------------------- superposiciones */
@@ -624,12 +640,12 @@ h2 {
 }
 
 .dialog button {
-  min-height: 46px;
+  min-height: 56px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: transparent;
   color: var(--text);
-  font-size: 15px;
+  font-size: 1.15rem;
 }
 
 .dialog .primary {
@@ -640,7 +656,7 @@ h2 {
 }
 
 .win h2 {
-  font-size: 24px;
+  font-size: 1.85rem;
 }
 
 .celebrating {
@@ -664,14 +680,14 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 14px;
+  font-size: 1.05rem;
   color: var(--accent);
   font-weight: 600;
 }
 
 .win-line {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .win-badge {
@@ -679,7 +695,7 @@ h2 {
 }
 
 .win-lifeline {
-  font-size: 12px;
+  font-size: 0.95rem;
   color: var(--muted);
   line-height: 1.4;
 }
@@ -702,7 +718,7 @@ h2 {
   color: #fff;
   padding: 10px 16px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 1rem;
   z-index: 1500;
   max-width: 88vw;
   text-align: center;
@@ -720,18 +736,18 @@ h2 {
 }
 
 .variant-list button {
-  min-height: 40px;
+  min-height: 48px;
 }
 
 .dialog input[type='number'] {
   width: 120px;
-  min-height: 40px;
+  min-height: 48px;
   padding: 4px 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: transparent;
   color: var(--text);
-  font-size: 14px;
+  font-size: 1.05rem;
   text-align: right;
 }
 
@@ -751,7 +767,7 @@ h2 {
 }
 
 .game-tile small {
-  font-size: 11px;
+  font-size: 0.9rem;
   font-weight: 500;
   opacity: 0.85;
 }
@@ -766,7 +782,7 @@ h2 {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
-  font-size: 15px;
+  font-size: 1.15rem;
   line-height: 1;
 }
 
@@ -799,7 +815,7 @@ h2 {
      */
     z-index: 1400;
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: 0.95rem;
     /* La barra flota sobre el tablero: sólo sus controles reciben el toque, el resto pasa de
        largo hasta las cartas de debajo. */
     pointer-events: none;
@@ -809,7 +825,7 @@ h2 {
   .game-bar .icon {
     pointer-events: auto;
     min-width: 40px;
-    min-height: 40px;
+    min-height: 48px;
     background: rgba(0, 0, 0, 0.45);
     border-radius: 10px;
   }
@@ -848,7 +864,7 @@ h2 {
     padding: 4px 8px;
     background: rgba(0, 0, 0, 0.45);
     border-radius: 10px;
-    font-size: 12px;
+    font-size: 0.95rem;
     line-height: 1.25;
   }
 
@@ -871,10 +887,10 @@ h2 {
     order: 2;
     flex-direction: column;
     justify-content: center;
-    width: 76px;
-    /* 56px arriba: el cronómetro y el contador viven ahí ahora. */
-    padding: 56px 8px 8px 0;
-    gap: 6px;
+    width: 100px;
+    /* Arriba viven el cronómetro y el contador. */
+    padding: 60px 8px 8px 0;
+    gap: 8px;
   }
 
   .hand-left .game {
@@ -883,7 +899,7 @@ h2 {
 
   .hand-left .controls {
     flex-direction: column;
-    padding: 56px 0 8px 8px;
+    padding: 60px 0 8px 8px;
   }
 
   .controls button {
@@ -891,8 +907,8 @@ h2 {
     max-width: none;
     width: 100%;
     /* Sigue cumpliendo el objetivo táctil de 44 px, pero sin robarle alto al tablero. */
-    min-height: 44px;
-    font-size: 12px;
+    min-height: 52px;
+    font-size: 0.95rem;
     padding: 4px;
   }
 }
@@ -914,7 +930,7 @@ h2 {
 
 /* El aviso de tiempo: un apunte, no una alarma. Sin rojo, sin icono de peligro, sin urgencia. */
 .over-goal {
-  font-size: 13px;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.4;
   padding: 8px 10px;
@@ -925,4 +941,17 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/*
+ * Zona de toque de las cartas: invisible, más grande que el dibujo (docs/09 §5).
+ * "Ampliar la zona de toque SIN ampliar el dibujo" era literalmente lo que pedía la doc, y es lo
+ * que permite que una carta enterrada, de la que sólo asoma una franja, se pueda tocar.
+ */
+.card-touch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: transparent;
+  touch-action: none;
 }

@@ -37,7 +37,17 @@ export interface Layout {
 const GAP_RATIO = 0.08; // Separación entre columnas, en anchos de carta.
 const FAN_FACEUP = 0.26; // Solapamiento mínimo cómodo de una carta boca arriba.
 const FAN_FACEDOWN = 0.13;
-const MIN_FAN = 0.08; // Por debajo de esto no se ve el índice de la esquina.
+/**
+ * Solapamiento mínimo. Subido de 0,08 a 0,16.
+ *
+ * Es la franja visible —y TOCABLE— de una carta enterrada en una columna. A 0,08 de una carta de
+ * 55 px eran 4 píxeles: ni se lee el índice ni lo acierta un dedo, y menos un dedo que tiembla.
+ * A 0,16 son 9, y la zona de toque ampliada (ui/board/Board.tsx) hace el resto.
+ *
+ * Cuesta alto, y por eso el abanico se sigue apretando cuando la columna es larga. Pero una
+ * columna que no se puede tocar no es una columna: es un adorno.
+ */
+const MIN_FAN = 0.16;
 
 /**
  * El abanico CRECE para llenar el alto disponible, no sólo se encoge para caber.
@@ -52,9 +62,15 @@ const MAX_FAN = 0.62;
 
 /** Una carta no debe pasar de esto: más grande no aporta y desperdicia pantalla. */
 const MAX_CARD_W = 140;
-/** Barra de controles abajo (vertical) y columna de controles al lado (apaisado). */
-const CONTROL_BAR = 64;
-const CONTROL_SIDE = 76;
+/**
+ * Barra de controles abajo (vertical) y columna de controles al lado (apaisado).
+ *
+ * Crecieron con los botones. Los objetivos táctiles pasaron de 44 px (que es el MÍNIMO de la
+ * norma, no un objetivo) a 52-60: para una mano con temblor o artrosis, 44 px es justo. Si estos
+ * números no acompañan, los botones acaban pisando las cartas de abajo.
+ */
+const CONTROL_BAR = 86;
+const CONTROL_SIDE = 100;
 
 interface Board {
   readonly columns: number;
