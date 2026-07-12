@@ -16,8 +16,15 @@ import {
   type Progress,
 } from '../../src/meta/rewards';
 import { meetsObjective } from '../../src/meta/outcome';
-import { record, merge, emptyStats, summaryFor } from '../../src/meta/stats';
-import { advance } from '../../src/meta/starclub';
+import { record, merge, emptyStats, summaryFor, totals, statsKey, winRate } from '../../src/meta/stats';
+import {
+  advance,
+  collections,
+  collectionComplete,
+  starsEarned,
+  STAR_OBJECTIVES,
+  type StarProgress,
+} from '../../src/meta/starclub';
 import { GAME_IDS } from '../../src/core/types';
 import type { Outcome } from '../../src/meta/outcome';
 import { fixedClock } from '../../src/services/clock';
@@ -343,5 +350,158 @@ describe('tiempo jugado hoy (informar, nunca limitar)', () => {
     const challenge = challengesFor('2026-07-12')[0]!;
     const result = claimChallenge(before, heavy, challenge, outcome(), '2026-07-12');
     expect(result.earned.coins).toBeGreaterThan(0);
+  });
+});
+
+describe('Club de Estrellas: TODOS los objetivos, no sólo los fáciles de probar', () => {
+  /**
+   * La mitad de los objetivos nunca se evaluaba en las pruebas: sus condiciones eran funciones
+   * que jamás llegaban a ejecutarse. Un objetivo que nadie prueba es un objetivo que puede ser
+   * imposible de conseguir sin que nadie se entere, y eso es de las cosas más frustrantes que
+   * le puedes hacer a alguien que lleva semanas persiguiéndolo.
+   */
+  const cases: { id: string; outcome: Outcome; times: number }[] = [
+    { id: 'klondike.noUndo', outcome: outcome({ game: 'klondike', undosUsed: 0 }), times: 1 },
+    { id: 'klondike.under6min', outcome: outcome({ game: 'klondike', seconds: 359 }), times: 1 },
+    {
+      id: 'klondike.draw3.wins',
+      outcome: outcome({ game: 'klondike', variant: { game: 'klondike', draw: 3, maxRedeals: null, scoring: true } }),
+      times: 3,
+    },
+    {
+      id: 'spider.noDeal',
+      outcome: outcome({ game: 'spider', variant: { game: 'spider', suits: 1 }, won: false, foundations: 2, stockDeals: 0 }),
+      times: 1,
+    },
+    {
+      id: 'spider.win2suits',
+      outcome: outcome({ game: 'spider', variant: { game: 'spider', suits: 2 } }),
+      times: 1,
+    },
+    {
+      id: 'spider.win4suits',
+      outcome: outcome({ game: 'spider', variant: { game: 'spider', suits: 4 } }),
+      times: 1,
+    },
+    {
+      id: 'freecell.noCells',
+      outcome: outcome({ game: 'freecell', variant: { game: 'freecell', freeCells: 4 }, freeCellsUsed: 0 }),
+      times: 1,
+    },
+    {
+      id: 'freecell.under60moves',
+      outcome: outcome({ game: 'freecell', variant: { game: 'freecell', freeCells: 4 }, moves: 59, freeCellsUsed: 3 }),
+      times: 1,
+    },
+    {
+      id: 'pyramid.oneRedeal',
+      outcome: outcome({ game: 'pyramid', variant: { game: 'pyramid', maxRedeals: 2, wasteSelfPairing: false }, stockDeals: 1 }),
+      times: 1,
+    },
+    {
+      id: 'pyramid.wins',
+      outcome: outcome({ game: 'pyramid', variant: { game: 'pyramid', maxRedeals: 2, wasteSelfPairing: false }, stockDeals: 2 }),
+      times: 3,
+    },
+    {
+      id: 'tripeaks.chain10',
+      outcome: outcome({ game: 'tripeaks', variant: { game: 'tripeaks', wrapAround: true }, won: false, bestChain: 10 }),
+      times: 1,
+    },
+    {
+      id: 'tripeaks.clearAll',
+      outcome: outcome({ game: 'tripeaks', variant: { game: 'tripeaks', wrapAround: true }, bestChain: 2 }),
+      times: 1,
+    },
+  ];
+
+  it('la tabla de pruebas cubre TODOS los objetivos del Club', () => {
+    // Si alguien añade un objetivo y no lo prueba, esto se lo dice.
+    expect(cases.map((entry) => entry.id).sort()).toEqual(
+      STAR_OBJECTIVES.map((objective) => objective.id).sort(),
+    );
+  });
+
+  it.each(cases)('$id se consigue cumpliéndolo $times vez/veces', ({ id, outcome: result, times }) => {
+    let progress: StarProgress = {};
+
+    // Las primeras veces avanza pero NO lo completa: un objetivo de "gana 3 partidas" que se
+    // diera a la primera sería una mentira.
+    for (let i = 0; i < times - 1; i++) {
+      const step = advance(progress, result);
+      expect(step.completed.map((objective) => objective.id), `${id} se dio antes de tiempo`).not.toContain(id);
+      progress = step.progress;
+    }
+
+    const final = advance(progress, result);
+    expect(final.completed.map((objective) => objective.id), `${id} no se consigue nunca`).toContain(id);
+    expect(final.coins).toBeGreaterThan(0);
+
+    // Y no se vuelve a dar: las monedas se cobran una vez.
+    expect(advance(final.progress, result).completed.map((objective) => objective.id)).not.toContain(id);
+  });
+
+  it('un objetivo de otro juego no avanza con esta partida', () => {
+    const spiderWin = outcome({ game: 'spider', variant: { game: 'spider', suits: 4 } });
+    const result = advance({}, spiderWin);
+    expect(result.completed.every((objective) => objective.game === 'spider')).toBe(true);
+  });
+
+  it('las colecciones se completan y se cuentan las estrellas', () => {
+    expect(collections().length).toBeGreaterThan(0);
+    expect(starsEarned({})).toBe(0);
+
+    // Una colección completa: todos sus objetivos al máximo.
+    const all: Record<string, number> = {};
+    for (const objective of STAR_OBJECTIVES) all[objective.id] = objective.times;
+
+    expect(starsEarned(all)).toBe(STAR_OBJECTIVES.length);
+    for (const collection of collections()) {
+      expect(collectionComplete(all, collection), collection).toBe(true);
+      expect(collectionComplete({}, collection), collection).toBe(false);
+    }
+  });
+});
+
+describe('estadísticas: resumen y fusión', () => {
+  it('el total suma todos los juegos', () => {
+    let stats = emptyStats();
+    stats = record(stats, outcome({ game: 'klondike' }));
+    stats = record(stats, outcome({ game: 'spider', variant: { game: 'spider', suits: 1 }, won: false }));
+
+    const all = totals(stats);
+    expect(all.played).toBe(2);
+    expect(all.won).toBe(1);
+  });
+
+  it('un juego sin jugar devuelve un resumen vacío, no undefined', () => {
+    const summary = summaryFor(emptyStats(), 'pyramid');
+    expect(summary.played).toBe(0);
+    expect(summary.bestTime).toBeNull();
+    expect(summary.fewestMoves).toBeNull();
+    expect(winRate(summary)).toBe(0);
+  });
+
+  it('la clave separa las variantes: ganar a 1 palo no dice nada de 4 palos', () => {
+    expect(statsKey('spider', { game: 'spider', suits: 1 })).not.toBe(
+      statsKey('spider', { game: 'spider', suits: 4 }),
+    );
+    expect(statsKey('klondike', { game: 'klondike', draw: 1, maxRedeals: null, scoring: true })).not.toBe(
+      statsKey('klondike', { game: 'klondike', draw: 3, maxRedeals: null, scoring: true }),
+    );
+    expect(statsKey('freecell', { game: 'freecell', freeCells: 4 })).toContain('freecell');
+    expect(statsKey('pyramid', { game: 'pyramid', maxRedeals: 2, wasteSelfPairing: false })).toContain('pyramid');
+    expect(statsKey('tripeaks', { game: 'tripeaks', wrapAround: true })).toContain('wrap');
+  });
+
+  it('fusionar con un dispositivo vacío no borra nada', () => {
+    const mine = record(emptyStats(), outcome({ seconds: 120, moves: 80 }));
+    const merged = merge(mine, emptyStats());
+    expect(summaryFor(merged, 'klondike').bestTime).toBe(120);
+    expect(summaryFor(merged, 'klondike').fewestMoves).toBe(80);
+
+    // Y al revés: el dispositivo vacío se queda con lo del otro.
+    const other = merge(emptyStats(), mine);
+    expect(summaryFor(other, 'klondike').bestTime).toBe(120);
   });
 });

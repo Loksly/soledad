@@ -13,10 +13,15 @@
     <title>Soledad</title>
 
     <!-- PWA: se instala desde el navegador y a partir de ahí funciona sin conexión. Es gratis:
-         el mismo código que va al APK, sin nada que quitar, porque la app nunca usó la red. -->
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/icons/icon-192.png" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+         el mismo código que va al APK, sin nada que quitar, porque la app nunca usó la red.
+
+         %BASE_URL% y no "/": Vite lo sustituye por la ruta real de publicación. En GitHub Pages
+         la app vive bajo /soledad/, y una ruta absoluta a pelo buscaba el manifiesto en la raíz
+         del dominio (404), así que Chrome no ofrecía instalar la app. Vite NO reescribe estos
+         href por su cuenta: hay que decírselo. -->
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <link rel="icon" href="%BASE_URL%icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/icon-192.png" />
     <meta name="mobile-web-app-capable" content="yes" />
   </head>
   <body>

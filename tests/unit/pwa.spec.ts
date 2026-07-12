@@ -186,6 +186,38 @@ describe('PWA', () => {
     expect(bundle).toContain('assets/cards/');
   });
 
+  it('el HTML enlaza el manifiesto y los iconos bajo la ruta base, no en la raíz', () => {
+    const BASE = baseOf(readManifest());
+    const html = readFileSync(join(DIST, 'index.html'), 'utf8');
+
+    // El fallo que esto impide, y que pasó de verdad en producción: `href="/manifest.webmanifest"`
+    // buscaba el manifiesto en la raíz del dominio (404 bajo /soledad/), así que Chrome no
+    // ofrecía instalar la app. Vite NO reescribe estos href solo: hay que usar %BASE_URL%.
+    const links = [...html.matchAll(/<link[^>]+href="([^"]+)"/g)].map((match) => match[1] ?? '');
+    const referenced = links.filter((href) => href.startsWith('/'));
+    expect(referenced.length, 'el HTML no enlaza nada: ¿se rompió el build?').toBeGreaterThan(0);
+
+    for (const href of referenced) {
+      expect(href.startsWith(BASE), `${href} no cuelga de ${BASE}`).toBe(true);
+    }
+    expect(links.some((href) => href.endsWith('manifest.webmanifest'))).toBe(true);
+    expect(links.some((href) => href.includes('icon-192.png'))).toBe(true);
+  });
+
+  it('el service worker se registra bajo la ruta base, no en /sw.js', () => {
+    const BASE = baseOf(readManifest());
+    const bundle = readdirSync(join(DIST, 'assets')).find(
+      (file) => file.startsWith('index-') && file.endsWith('.js'),
+    );
+    expect(bundle).toBeDefined();
+    const code = readFileSync(join(DIST, 'assets', bundle ?? ''), 'utf8');
+
+    // Un service worker sólo puede controlar su propio directorio hacia abajo: registrado en la
+    // raíz con la app colgando de /soledad/, el navegador lo rechaza y no hay modo offline.
+    expect(code).toContain('serviceWorker');
+    expect(code).toContain(BASE);
+  });
+
   it('dist/ no contiene los SVG originales: se publican los WebP', () => {
     requireBuild();
     const cards = join(DIST, 'assets', 'cards', 'Vertical2');

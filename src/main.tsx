@@ -5,6 +5,7 @@ import { attach } from './app/store';
 import { attachClock } from './app/session';
 import { IndexedDbRepository } from './services/storage/repository';
 import { systemClock } from './services/clock';
+import { asset, BASE } from './services/base';
 import './ui/theme/styles.css';
 
 /**
@@ -29,7 +30,10 @@ if (root) render(<App />, root);
  */
 if (import.meta.env.PROD && 'serviceWorker' in navigator && !Capacitor.isNativePlatform()) {
   window.addEventListener('load', () => {
+    // La ruta y el ámbito salen de la base de publicación, no de '/'. Registrar '/sw.js' bajo
+    // GitHub Pages da 404, y además un service worker sólo puede controlar su propio directorio
+    // hacia abajo: con scope '/' el navegador lo rechazaría de plano.
     // Un fallo al registrarlo NO puede impedir jugar: como mucho, se pierde el modo offline.
-    void navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+    void navigator.serviceWorker.register(asset('sw.js'), { scope: BASE }).catch(() => undefined);
   });
 }
